@@ -1,24 +1,13 @@
 import React from 'react';
-import axios from 'axios';
 import { ToastContainer } from 'react-toastify';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getImage } from './server/fetchApp';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
+import { LoaderIcon } from './Loader/Loader';
 import { Button } from './Button/Button';
-
-const API_KEY = '31544306-98c50720df0af9d375614fc16';
-const BASE_URL = 'https://pixabay.com/api/';
-
-async function getImage(images, page) {
-  try {
-    return await axios.get(
-      `${BASE_URL}?q=${images}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
-    );
-  } catch (error) {
-    console.error(error);
-  }
-}
+import { Modal } from './Modal/Modal';
 
 export class App extends React.Component {
   state = {
@@ -26,69 +15,79 @@ export class App extends React.Component {
     page: 1,
     images: [],
     loader: false,
+    status: {},
+    showModal: false,
+    currentImg: '',
   };
 
-  async componentDidUpdate(prevProps, prevState) {
-    console.log(prevProps);
-    console.log(this.state.search);
-    if (
-      prevState.search === this.state.search &&
-      prevState.page !== this.state.page
-    ) {
-      this.setState({ loader: true });
-      const respons = await getImage(this.state.search, this.state.page);
-      const imagesList = respons.data.hits;
-      this.setState(({ images }) => ({
-        images: [...images, ...imagesList],
-      }));
-      this.setState({ loader: false });
-    } else if (prevState.search !== this.state.search) {
-      this.setState({ loader: true });
-      const respons = await getImage(this.state.search, this.state.page);
-      const imagesList = respons.data.hits;
-      if (!imagesList.length) {
-        this.setState({ loader: false });
-        return toast.error('Enter a valid search');
-      }
+  async componentDidUpdate(_, prevState) {
+    const { search: prevSearch, page: prevPage } = prevState;
+    const { search, page } = this.state;
 
-      this.setState({ images: imagesList, loader: false });
+    if (prevSearch !== search || prevPage !== page) {
+      try {
+        this.setState({ loader: true });
+        const respons = await getImage(search, page);
+        const imagesList = respons.data.hits;
+
+        if (!imagesList.length) {
+          this.setState({ loader: false });
+          return toast.error('Enter a valid search');
+        }
+
+        this.setState(({ images }) => ({
+          images: [...images, ...imagesList],
+        }));
+        this.setState({ loader: false });
+      } catch (error) {
+        this.setState({ loader: false });
+        return toast.error('Please try later server not responding');
+      }
     }
   }
 
-  handlSearch = search => {
-    this.setState(search);
-    this.setState({ page: 1 });
+  togleModal = () => {
+    this.setState(({ showModal }) => ({ showModal: !showModal }));
   };
 
-  handlClickLoadMore = page => {
+  onClick = ({ target: { src } }) => {
+    const { images } = this.state;
+    const currentImg = images.find(el => el.webformatURL === src);
+    this.setState({ currentImg: currentImg.largeImageURL });
+    this.togleModal();
+  };
+
+  handlSearch = search => {
+    this.setState({ page: 1, images: [] });
+    this.setState(search);
+  };
+
+  handlClickLoadMore = () => {
     this.setState(({ page }) => ({ page: page + 1 }));
   };
 
   render() {
-    console.log(this.state.search);
+    const {
+      handlSearch,
+      onClick,
+      handlClickLoadMore,
+      togleModal,
+      state: { images, loader, search, showModal, currentImg },
+    } = this;
+
     return (
-      <div
-        style={{
-          // height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          fontSize: 40,
-          color: '#010101',
-        }}
-      >
-        <Searchbar onSubmit={this.handlSearch} />
-        <ImageGallery
-          children
-          // search={this.state.search}
-          // page={this.state.page}
-          images={this.state.images}
-        />
-        {this.state.loader && <div>Loader...</div>}
-        {this.state.search &&
-          this.state.images.length !== 0 &&
-          !this.state.loader && <Button onClick={this.handlClickLoadMore} />}
+      <div className="App">
+        <Searchbar onSubmit={handlSearch} />
+        <ImageGallery children images={images} onClick={() => onClick} />
+        {loader && <LoaderIcon />}
+        {search && images.length !== 0 && !loader && (
+          <Button onClick={handlClickLoadMore} />
+        )}
+        {showModal && (
+          <Modal onClose={togleModal}>
+            <img src={currentImg} alt="" />
+          </Modal>
+        )}
         <ToastContainer autoClose={3000} position="top-center" theme="dark" />
       </div>
     );

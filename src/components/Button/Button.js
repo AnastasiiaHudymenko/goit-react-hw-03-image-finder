@@ -1,6 +1,7 @@
-export const Button = props => {
-  console.log(props);
-  // const handlClickLoadMore = () => {};
-
-  return <button onClick={props.onClick}>Load more</button>;
+export const Button = ({ onClick }) => {
+  return (
+    <button className="Button" type="button" onClick={onClick}>
+      Load more
+    </button>
+  );
 };

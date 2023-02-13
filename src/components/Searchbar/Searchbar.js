@@ -1,7 +1,6 @@
 import React from 'react';
 import { toast } from 'react-toastify';
 import { Formik, Form, Field } from 'formik';
-import css from './Searchbar.module.css';
 
 let initialValues = { search: '' };
 
@@ -9,21 +8,23 @@ export const Searchbar = ({ onSubmit }) => {
   const handlSubmit = (values, actions) => {
     initialValues = values;
     if (values.search.trim() === '') {
+      actions.resetForm();
       return toast.error('Enter a valid search');
     }
     return onSubmit(values);
   };
 
   return (
-    <header>
+    <header className="Searchbar">
       <Formik initialValues={initialValues} onSubmit={handlSubmit}>
-        <Form className={css.form}>
+        <Form className="SearchForm">
           <Field
+            className="SearchForm-input"
             name="search"
             type="text"
             placeholder="Search images and photos"
           />
-          <button className={css.btn} type="submit">
+          <button className="SearchForm-button" type="submit">
             <span>Search</span>
           </button>
         </Form>
