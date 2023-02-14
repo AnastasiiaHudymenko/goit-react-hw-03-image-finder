@@ -1,22 +1,28 @@
 import React from 'react';
-import { toast } from 'react-toastify';
-import { Formik, Form, Field } from 'formik';
+import PropTypes from 'prop-types';
+import { object, string } from 'yup';
+import { FcSearch } from 'react-icons/fc';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
 
 let initialValues = { search: '' };
 
+let userSchema = object({
+  search: string().min(2, 'Too Short!').max(70, 'Too Long!').required(),
+});
+
 export const Searchbar = ({ onSubmit }) => {
-  const handlSubmit = (values, actions) => {
+  const handlSubmit = values => {
     initialValues = values;
-    if (values.search.trim() === '') {
-      actions.resetForm();
-      return toast.error('Enter a valid search');
-    }
     return onSubmit(values);
   };
 
   return (
     <header className="Searchbar">
-      <Formik initialValues={initialValues} onSubmit={handlSubmit}>
+      <Formik
+        validationSchema={userSchema}
+        initialValues={initialValues}
+        onSubmit={handlSubmit}
+      >
         <Form className="SearchForm">
           <Field
             className="SearchForm-input"
@@ -24,11 +30,17 @@ export const Searchbar = ({ onSubmit }) => {
             type="text"
             placeholder="Search images and photos"
           />
+
+          <ErrorMessage className="Error" component="div" name="search" />
           <button className="SearchForm-button" type="submit">
-            <span>Search</span>
+            <FcSearch size={36} />
           </button>
         </Form>
       </Formik>
     </header>
   );
+};
+
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func,
 };

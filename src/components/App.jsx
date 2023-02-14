@@ -15,7 +15,6 @@ export class App extends React.Component {
     page: 1,
     images: [],
     loader: false,
-    status: {},
     showModal: false,
     currentImg: '',
   };
