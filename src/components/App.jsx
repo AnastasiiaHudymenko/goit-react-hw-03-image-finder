@@ -17,6 +17,7 @@ export class App extends React.Component {
     loader: false,
     showModal: false,
     currentImg: '',
+    totalHits: 0,
   };
 
   async componentDidUpdate(_, prevState) {
@@ -27,17 +28,23 @@ export class App extends React.Component {
       try {
         this.setState({ loader: true });
         const respons = await getImage(search, page);
-        const imagesList = respons.data.hits;
+        const imagesList = respons.data;
 
-        if (!imagesList.length) {
+        if (!imagesList.hits.length) {
           this.setState({ loader: false });
           return toast.error('Enter a valid search');
         }
 
         this.setState(({ images }) => ({
-          images: [...images, ...imagesList],
+          images: [...images, ...imagesList.hits],
         }));
         this.setState({ loader: false });
+        if (page === 1) {
+          this.setState({ totalHits: imagesList.totalHits });
+        }
+        if (prevPage < page) {
+          this.setState(({ totalHits }) => ({ totalHits: totalHits - 12 }));
+        }
       } catch (error) {
         this.setState({ loader: false });
         return toast.error('Please try later server not responding');
@@ -71,7 +78,7 @@ export class App extends React.Component {
       onClick,
       handlClickLoadMore,
       togleModal,
-      state: { images, loader, search, showModal, currentImg },
+      state: { images, loader, search, showModal, currentImg, totalHits },
     } = this;
 
     return (
@@ -79,7 +86,7 @@ export class App extends React.Component {
         <Searchbar onSubmit={handlSearch} />
         <ImageGallery children images={images} onClick={() => onClick} />
         {loader && <LoaderIcon />}
-        {search && images.length !== 0 && !loader && (
+        {search && images.length !== 0 && !loader && totalHits > 12 && (
           <Button onClick={handlClickLoadMore} />
         )}
         {showModal && (
